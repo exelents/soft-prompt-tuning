@@ -1,0 +1,50 @@
+{
+  "train_batch_size": 2,
+  "steps_per_print": 2000,
+
+  "fp16": {
+    "enabled": true,
+    "loss_scale": 0,
+    "loss_scale_window": 1000,
+    "initial_scale_power": 12,
+    "hysteresis": 2,
+    "min_loss_scale": 1
+  },
+
+  "zero_optimization": {
+    "stage": 3,
+    "cpu_offload": true,
+    "cpu_offload_params": true,
+    "overlap_comm": true,
+    "contiguous_gradients": true,
+    "stage3_max_live_parameters": 6000000,
+    "stage3_max_reuse_distance": 100000000,
+    "stage3_prefetch_bucket_size": 200000,
+    "stage3_param_persitance_threshold": 100000,
+    "reduce_bucket_size": 3000000,
+    "sub_group_size": 1e6,
+    "stage3_gather_fp16_weights_on_model_save": true
+  },
+
+  "optimizer": {
+    "type": "Adam",
+    "params": {
+      "lr": 1e-5,
+      "betas": [
+        0.8,
+        0.999
+      ],
+      "eps": 1e-8,
+      "weight_decay": 3e-7
+    }
+  },
+  "scheduler": {
+    "type": "WarmupLR",
+    "params": {
+      "warmup_min_lr": 0,
+      "warmup_max_lr": 3e-5,
+      "warmup_num_steps": 500
+    }
+  },
+  "wall_clock_breakdown": false
+}
