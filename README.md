@@ -20,6 +20,11 @@ Install HuggingFace Transformers library from theit git repository:
 
 Evaluation code hasn't been done, so it's a much to do here ;)
 
+<img src="./train_loss.png" width="660">
+
+Orange line - train 1 prefix a time.
+Blue - train 2 prefixes a time.
+
 
 # The Power of Scale for Parameter-Efficient Prompt Tuning
 
