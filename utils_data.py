@@ -1,5 +1,7 @@
 import torch
+from torch.nn.utils.rnn import pad_sequence
 from transformers.data.data_collator import *
+from transformers import BatchEncoding
 from transformers import PreTrainedTokenizer
 
 
