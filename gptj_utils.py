@@ -2,12 +2,12 @@ import os
 import torch
 import torch.nn as nn
 import json
-from transformers import GPTNeoForCausalLM, AutoConfig, AutoTokenizer
+from transformers import GPTJForCausalLM, AutoConfig, AutoTokenizer
 import deepspeed
 import torch
 import argparse
 from utils import get_argument_parser
-from transformers import GPTNeoPreTrainedModel
+from transformers import GPTJPreTrainedModel
 from typing import Union, Iterable, Tuple
 from soft_embedding import SoftEmbedding
 from utils1 import freeze_params
@@ -22,7 +22,7 @@ for k,v in dist_env_1_gpu.items():
 
 def get_model_config_tokenizer(model_path):
     # GPT-J 6B config
-    config = AutoConfig.from_pretrained("EleutherAI/gpt-neo-2.7B")
+    config = AutoConfig.from_pretrained("EleutherAI/gpt-J-6B")
     config.attention_layers = ["global"] * 28
     config.attention_types = [["global"], 28]
     config.num_layers = 28
@@ -39,37 +39,8 @@ def get_model_config_tokenizer(model_path):
         from collections import MutableMapping
     from pathlib import Path
 
-    class Checkpoint(MutableMapping):
-        def __init__(self, chkpt_dir, device="cpu"):
-            self.device = device
-            self.chkpt_dir = Path(chkpt_dir)
-            self.checkpoint = torch.load(str(chkpt_dir / Path("m.pt")))
-        def __len__(self):
-            return len(self.checkpoint)
-        def __getitem__(self, key):
-            path = self.chkpt_dir / Path(self.checkpoint[key]).name
-            return torch.load(str(path), map_location=self.device)
-        def __setitem__(self, key, value):
-            return
-        def __delitem__(self, key, value):
-            return
-        def keys(self):
-            return self.checkpoint.keys()
-        def __iter__(self):
-            for key in self.checkpoint:
-                yield (key, self.__getitem__(key))
-        def __copy__(self):
-            return Checkpoint(self.chkpt_dir, device=self.device)
-        def copy(self):
-            return Checkpoint(self.chkpt_dir, device=self.device)
-
-    model = GPTNeoForCausalLM.from_pretrained(
-        pretrained_model_name_or_path=None,
-        config=config,
-        state_dict=Checkpoint(model_path)
-    )
-
-    tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neo-2.7B", add_prefix_space=True)
+    model = GPTJForCausalLM.from_pretrained("EleutherAI/gpt-j-6B", config=config).to('cpu')
+    tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B", add_prefix_space=True)
 
     return model, config, tokenizer
 
@@ -93,7 +64,7 @@ def get_deepspeed_engine_optimizer(model, config_filename="ds_config_stage2_gptj
     return model_engine, optimizer
 
 
-class GPTJ_PrefixTune(GPTNeoPreTrainedModel):
+class GPTJ_PrefixTune(GPTJPreTrainedModel):
     def __init__(self, model_path="j6b_ckpt",
                  seq_len=512,
                  soft_emb_n_tokens=5,
@@ -137,6 +108,8 @@ class GPTJ_PrefixTune(GPTNeoPreTrainedModel):
         self.model_path = model_path
         self.tokenizer = tokenizer
         self.deepspeed_config = deepspeed_config
+
+        self.model_parallel = True
 
     def get_soft_emb_state_dict(self, state_dict=None):
         if state_dict is None:
